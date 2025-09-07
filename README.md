@@ -8,4 +8,4 @@ The point of this repository is **NOT** to ditch MicroWin from WinUtil, but rath
 **THIS REPOSITORY IS CURRENTLY MARKED AS PRIVATE because I'm not fully sure if it will be viable. Once this is decoupled from WinUtil and contributing to the CANARY version becomes more viable, I will make this repository public.**
 
 <!-- by the way, chris, copilot wanted me to point to your social media sites while working on this paragraph -->
-Those who are looking at this file have access to this repository. This essentially works like a repository owned by a team, in the sense that you can contribute directly, without forking.
+Those who are looking at this file have access to this repository. This essentially works like a repository owned by a team, in the sense that you can contribute directly, without forking. Still, I recommend that you create branches.
