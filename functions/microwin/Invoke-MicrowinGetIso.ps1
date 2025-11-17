@@ -1,12 +1,17 @@
+using namespace System.Collections
+
 function Invoke-MicrowinGetIso {
     <#
-    .DESCRIPTION
-    Function to get the path to Iso file for MicroWin, unpack that isom=, read basic information and populate the UI Options
+        .DESCRIPTION
+        Function to get the path to Iso file for MicroWin, unpack that isom, read basic information and populate the UI Options
     #>
+    param (
+        [Parameter(Mandatory, Position = 0)] [System.Collections.Hashtable] $options
+    )
 
     Write-Debug "Invoking WPFGetIso"
 
-    if($sync.ProcessRunning) {
+    if($sync -ne $null -and $sync.ProcessRunning) {
         $msg = "GetIso process is currently running."
         [System.Windows.MessageBox]::Show($msg, "Winutil", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
         return
@@ -21,7 +26,7 @@ function Invoke-MicrowinGetIso {
     Write-Host "/ /\/\ \| || (__ | |   | (_) | \  /\  / | || | | | "
     Write-Host "\/    \/|_| \___||_|    \___/   \/  \/  |_||_| |_| "
 
-    if ($sync["ISOmanual"].IsChecked) {
+    if ($options["ISOmanual"]) {
         # Open file dialog to let user choose the ISO file
         Invoke-MicrowinBusyInfo -action "wip" -message "Please select an ISO file..." -interactive $true
         [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
@@ -126,19 +131,23 @@ function Invoke-MicrowinGetIso {
     $oscdImgFound = [bool] (Get-Command -ErrorAction Ignore -Type Application oscdimg.exe) -or (Test-Path $oscdimgPath -PathType Leaf)
     Write-Host "oscdimg.exe on system: $oscdImgFound"
 
-    if (!$oscdImgFound) {
+    if (-not $oscdImgFound) {
         $downloadFromGitHub = $sync.WPFMicrowinDownloadFromGitHub.IsChecked
+        
+        # if not running in winutil, we force a download from github -- invoking an install from chocolatey calls functions
+        # that are not in what we work with with our version.
+        if ($sync -eq $null) { $downloadFromGitHub = $true }
 
-        if (!$downloadFromGitHub) {
+        if (-not $downloadFromGitHub) {
             # only show the message to people who did check the box to download from github, if you check the box
             # you consent to downloading it, no need to show extra dialogs
-            [System.Windows.MessageBox]::Show("oscdimge.exe is not found on the system, winutil will now attempt do download and install it using choco. This might take a long time.")
+            [System.Windows.MessageBox]::Show("oscdimg.exe is not found on the system, winutil will now attempt do download and install it using choco. This might take a long time.")
             # the step below needs choco to download oscdimg
             # Install Choco if not already present
             Install-WinUtilChoco
             $chocoFound = [bool] (Get-Command -ErrorAction Ignore -Type Application choco)
             Write-Host "choco on system: $chocoFound"
-            if (!$chocoFound) {
+            if (-not $chocoFound) {
                 [System.Windows.MessageBox]::Show("choco.exe is not found on the system, you need choco to download oscdimg.exe")
                 return
             }
@@ -149,11 +158,11 @@ function Invoke-MicrowinGetIso {
             [System.Windows.MessageBox]::Show($msg)
             return
         } else {
-            [System.Windows.MessageBox]::Show("oscdimge.exe is not found on the system, winutil will now attempt do download and install it from github. This might take a long time.")
+            [System.Windows.MessageBox]::Show("oscdimg.exe is not found on the system, winutil will now attempt do download and install it from github. This might take a long time.")
             Invoke-MicrowinBusyInfo -action "wip" -message "Downloading oscdimg.exe..." -interactive $false
             Microwin-GetOscdimg -oscdimgPath $oscdimgPath
             $oscdImgFound = Test-Path $oscdimgPath -PathType Leaf
-            if (!$oscdImgFound) {
+            if (-not $oscdImgFound) {
                 $msg = "oscdimg was not downloaded can not proceed"
                 Invoke-MicrowinBusyInfo -action "warning" -message $msg
                 [System.Windows.MessageBox]::Show($msg, "Winutil", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
@@ -171,7 +180,7 @@ function Invoke-MicrowinGetIso {
     Write-Debug "Size of ISO file: $($isoSize) bytes"
     # Use this procedure to get the free space of the drive depending on where the user profile folder is stored.
     # This is done to guarantee a dynamic solution, as the installation drive may be mounted to a letter different than C
-    $driveSpace = (Get-Volume -DriveLetter ([IO.Path]::GetPathRoot([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)).Replace(":\", "").Trim())).SizeRemaining
+    $driveSpace = (Get-Volume -DriveLetter "$($env:SYSTEMDRIVE.Replace(':', ''))").SizeRemaining
     Write-Debug "Free space on installation drive: $($driveSpace) bytes"
     if ($driveSpace -lt ($isoSize * 2)) {
         # It's not critical and we _may_ continue. Output a warning

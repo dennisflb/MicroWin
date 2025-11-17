@@ -36,7 +36,8 @@ function Microwin-RemovePackages {
                     $_ -NotLike "*License*" -AND
                     $_ -NotLike "*Hello-Face*" -AND
                     $_ -NotLike "*ISE*" -AND
-                    $_ -NotLike "*OpenSSH*"
+                    $_ -NotLike "*OpenSSH*" -AND
+                    $_ -NotLike "*PMCPPC*"
                 }
         } else {
             $pkgList = dism /english /image="$scratchDir" /get-packages | Select-String -Pattern "Package Identity : " -CaseSensitive -SimpleMatch
@@ -60,7 +61,8 @@ function Microwin-RemovePackages {
                     $_ -NotLike "*License*" -AND
                     $_ -NotLike "*Hello-Face*" -AND
                     $_ -NotLike "*ISE*" -AND
-                    $_ -NotLike "*OpenSSH*"
+                    $_ -NotLike "*OpenSSH*" -AND
+                    $_ -NotLike "*PMCPPC*"
                 }
             } else {
                 Write-Host "Packages could not be obtained with DISM. MicroWin processing will continue, but packages will be skipped."

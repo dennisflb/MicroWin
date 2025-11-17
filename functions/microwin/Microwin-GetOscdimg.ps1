@@ -20,7 +20,7 @@ function Microwin-GetOscdimg {
 
     Write-Host "[INFO] oscdimg.exe SHA-256 Hash: $sha256Hash"
 
-    $expectedHash = "AB9E161049D293B544961BFDF2D61244ADE79376D6423DF4F60BF9B147D3C78D"  # Replace with the actual expected hash
+    $expectedHash = "AB9E161049D293B544961BFDF2D61244ADE79376D6423DF4F60BF9B147D3C78D"
     if ($sha256Hash -eq $expectedHash) {
         Write-Host "Hashes match. File is verified."
     } else {

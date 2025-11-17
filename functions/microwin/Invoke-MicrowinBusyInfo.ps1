@@ -19,6 +19,10 @@ function Invoke-MicrowinBusyInfo {
 
         [Parameter(ParameterSetName='wip', Position = 2)] [bool]$interactive = $false
     )
+    
+    if ($sync -eq $null) {
+        return
+    }
 
     switch ($action) {
         "wip" {

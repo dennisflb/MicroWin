@@ -1,11 +1,19 @@
+using namespace System.Collections
+
 function Invoke-Microwin {
+    param (
+        [Parameter(Mandatory)] [System.Collections.Hashtable] $options
+    )
     <#
         .DESCRIPTION
         Invoke MicroWin routines...
     #>
 
+    # The sync variable is specific to WinUtil. In cases where we can't replace a sync var call with a hashtable property,
+    # we'll just check if it's even defined. Progress reporting will also become conditioned to whether or not we define this
+    # variable.
 
-    if($sync.ProcessRunning) {
+    if(($sync -ne $null) -and ($sync.ProcessRunning)) {
         $msg = "GetIso process is currently running."
         [System.Windows.MessageBox]::Show($msg, "Winutil", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
         return
@@ -51,21 +59,21 @@ public class PowerManagement {
 
     Write-Host "Target ISO location: $($SaveDialog.FileName)"
 
-    $index = $sync.MicrowinWindowsFlavors.SelectedValue.Split(":")[0].Trim()
-    Write-Host "Index chosen: '$index' from $($sync.MicrowinWindowsFlavors.SelectedValue)"
+    $index = $options["MicrowinWindowsFlavors"].SelectedValue.Split(":")[0].Trim()
+    Write-Host "Index chosen: '$index' from $($options['MicrowinWindowsFlavors'].SelectedValue)"
 
-    $copyToUSB = $sync.WPFMicrowinCopyToUsb.IsChecked
-    $injectDrivers = $sync.MicrowinInjectDrivers.IsChecked
-    $importDrivers = $sync.MicrowinImportDrivers.IsChecked
+    $copyToUSB = $options["MicrowinCopyToUsb"]
+    $injectDrivers = $options["MicrowinInjectDrivers"]
+    $importDrivers = $options["MicrowinImportDrivers"]
 
-    $WPBT = $sync.MicroWinWPBT.IsChecked
-    $unsupported = $sync.MicroWinUnsupported.IsChecked
-    $skipFla = $sync.MicroWinNoFLA.IsChecked
+    $WPBT = $options["MicroWinWPBT"]
+    $unsupported = $options["MicroWinUnsupported"]
+    $skipFla = $options["MicroWinNoFLA"]
 
-    $importVirtIO = $sync.MicrowinCopyVirtIO.IsChecked
+    $importVirtIO = $options["MicrowinCopyVirtIO"]
 
-    $mountDir = $sync.MicrowinMountDir.Text
-    $scratchDir = $sync.MicrowinScratchDir.Text
+    $mountDir = $options["MicrowinMountDir"]
+    $scratchDir = $options["MicrowinScratchDir"]
 
     # Detect if the Windows image is an ESD file and convert it to WIM
     if (-not (Test-Path -Path "$mountDir\sources\install.wim" -PathType Leaf) -and (Test-Path -Path "$mountDir\sources\install.esd" -PathType Leaf)) {
@@ -141,9 +149,9 @@ public class PowerManagement {
             if (Test-Path "$env:TEMP\DRV_EXPORT") {
                 Remove-Item "$env:TEMP\DRV_EXPORT" -Recurse -Force
             }
-            if (($injectDrivers -and (Test-Path "$($sync.MicrowinDriverLocation.Text)"))) {
+            if (($injectDrivers -and (Test-Path "$($options['MicrowinDriverLocation'])"))) {
                 Write-Host "Using specified driver source..."
-                dism /english /online /export-driver /destination="$($sync.MicrowinDriverLocation.Text)" | Out-Host
+                dism /english /online /export-driver /destination="$($options['MicrowinDriverLocation'])" | Out-Host
                 if ($?) {
                     # Don't add exported drivers yet, that is run later
                     Write-Host "Drivers have been exported successfully."
@@ -166,7 +174,7 @@ public class PowerManagement {
         }
 
         if ($injectDrivers) {
-            $driverPath = $sync.MicrowinDriverLocation.Text
+            $driverPath = $options["MicrowinDriverLocation"]
             if (Test-Path $driverPath) {
                 Write-Host "Adding Windows Drivers image($scratchDir) drivers($driverPath) "
                 dism /English /image:$scratchDir /add-driver /driver:$driverPath /recurse | Out-Host
@@ -258,12 +266,12 @@ public class PowerManagement {
 
         Write-Host "Create unattend.xml"
 
-        if (($sync.MicrowinAutoConfigBox.Text -ne "") -and (Test-Path "$($sync.MicrowinAutoConfigBox.Text)"))
+        if (($options["MicrowinAutoConfigBox"] -ne "") -and (Test-Path "$($options['MicrowinAutoConfigBox'])"))
         {
             try
             {
                 Write-Host "A configuration file has been specified. Copying to WIM file..."
-                Copy-Item "$($sync.MicrowinAutoConfigBox.Text)" "$($scratchDir)\winutil-config.json"
+                Copy-Item "$($options['MicrowinAutoConfigBox'])" "$($scratchDir)\winutil-config.json"
             }
             catch
             {
@@ -272,19 +280,19 @@ public class PowerManagement {
         }
 
         # Create unattended answer file with user information - Check condition to learn more about this functionality
-        if ($sync.MicrowinUserName.Text -eq "")
+        if ($options["MicrowinUserName"] -eq "")
         {
             Microwin-NewUnattend -userName "User"
         }
         else
         {
-            if ($sync.MicrowinUserPassword.Password -eq "")
+            if ($options["MicrowinUserPassword"].Password -eq "")
             {
-                Microwin-NewUnattend -userName "$($sync.MicrowinUserName.Text)"
+                Microwin-NewUnattend -userName "$($options['MicrowinUserName'])"
             }
             else
             {
-                Microwin-NewUnattend -userName "$($sync.MicrowinUserName.Text)" -userPassword "$($sync.MicrowinUserPassword.Password)"
+                Microwin-NewUnattend -userName "$($options['MicrowinUserName'])" -userPassword "$($options['MicrowinUserPassword'].Password)"
             }
         }
         Write-Host "Done Create unattend.xml"
@@ -433,7 +441,7 @@ public class PowerManagement {
         }
         Write-Host "Windows image completed. Continuing with boot.wim."
 
-        $esd = $sync.MicroWinESD.IsChecked
+        $esd = $options["MicroWinESD"]
         if ($esd) {
             Write-Host "Converting install image to ESD."
             try {
@@ -452,7 +460,7 @@ public class PowerManagement {
         Mount-WindowsImage -ImagePath "$mountDir\sources\boot.wim" -Index 2 -Path "$scratchDir"
 
         if ($injectDrivers) {
-            $driverPath = $sync.MicrowinDriverLocation.Text
+            $driverPath = $options["MicrowinDriverLocation"]
             if (Test-Path $driverPath) {
                 Write-Host "Adding Windows Drivers image($scratchDir) drivers($driverPath) "
                 dism /English /image:$scratchDir /add-driver /driver:$driverPath /recurse | Out-Host
@@ -551,7 +559,9 @@ public class PowerManagement {
 
         Toggle-MicrowinPanel 1
 
-        $sync.MicrowinFinalIsoLocation.Text = "$($SaveDialog.FileName)"
+        if ($sync -ne $null) {
+            $sync.MicrowinFinalIsoLocation.Text = "$($SaveDialog.FileName)"
+        }
         # Allow the machine to sleep again (optional)
         [PowerManagement]::SetThreadExecutionState(0)
         $sync.ProcessRunning = $false

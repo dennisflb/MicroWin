@@ -80,15 +80,13 @@ function Microwin-NewFirstRun {
     {
 
     }
-
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.Suggested" /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.Suggested" /v Enabled /t REG_DWORD /d 0 /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.StartupApp" /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.StartupApp" /v Enabled /t REG_DWORD /d 0 /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop" /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop" /v Enabled /t REG_DWORD /d 0 /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.AccountHealth" /f
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.SystemToast.AccountHealth" /v Enabled /t REG_DWORD /d 0 /f
+    
+    $COPILOT_APP_NOTIFICATION_SOURCE = "Microsoft.Copilot_8wekyb3d8bbwe!App"
+    
+    foreach ($source in @("Windows.SystemToast.Suggested", "Windows.SystemToast.StartupApp", "Microsoft.SkyDrive.Desktop", "Windows.SystemToast.AccountHealth", $COPILOT_APP_NOTIFICATION_SOURCE)) {
+        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\$source" /f
+        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\$source" /f /v Enabled /t REG_DWORD /d 0
+    }
 
     # This will set List view in Start menu on Win11 25H2. This will not do anything in 24H2 and older
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Start" /v AllAppsViewMode /t REG_DWORD /d 2 /f

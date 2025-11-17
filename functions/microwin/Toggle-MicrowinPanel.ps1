@@ -16,6 +16,10 @@ function Toggle-MicrowinPanel {
         [ValidateSet(1, 2)]
         [int]$PanelNumber
     )
+    
+    if ($sync -eq $null) {
+        return
+    }
 
     if ($PanelNumber -eq 1) {
         $sync.MicrowinISOPanel.Visibility = 'Visible'
